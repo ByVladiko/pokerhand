@@ -1,15 +1,12 @@
 package com.vldby.pockerhand.model;
 
-import com.vldby.pockerhand.enums.ComboType;
-import com.vldby.pockerhand.enums.Rank;
-import com.vldby.pockerhand.enums.Suit;
 import com.vldby.pockerhand.exception.ParseException;
+import com.vldby.pockerhand.service.CombinationEvaluator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.vldby.pockerhand.enums.ComboType.*;
-import static com.vldby.pockerhand.enums.Rank.ACE;
 import static com.vldby.pockerhand.model.Card.CARD_SIZE;
 
 public class PokerHand implements Comparable<PokerHand> {
@@ -17,24 +14,20 @@ public class PokerHand implements Comparable<PokerHand> {
     public static final String CARDS_DELIM = " ";
     public static final int HAND_SIZE = 5;
 
-    private final List<Card> cards = new ArrayList<>();
-    private final Map<Suit, List<Card>> suitRepeats = new HashMap<>();
-    private final Map<Rank, List<Card>> rankRepeats = new HashMap<>();
+    private final List<Card> cards = new ArrayList<>(HAND_SIZE);
     private final Combination combination;
 
     public PokerHand(String input) throws ParseException {
         init(input);
-        combination = evaluateCombination();
+        combination = new CombinationEvaluator(this).evaluateCombination();
     }
 
     public PokerHand(List<Card> cards) throws ParseException {
+        if (cards.size() != HAND_SIZE)
+            throw new ParseException("Hand size must be " + HAND_SIZE);
+
         this.cards.addAll(cards);
-        validate();
-        for (Card card : cards) {
-            addRankRepeat(card);
-            addSuitRepeat(card);
-        }
-        combination = evaluateCombination();
+        combination = new CombinationEvaluator(this).evaluateCombination();
     }
 
     private void init(String input) throws ParseException {
@@ -47,105 +40,6 @@ public class PokerHand implements Comparable<PokerHand> {
                 throw new ParseException("Invalid syntax on position: " + index, index, e);
             }
         }
-        validate();
-        for (Card card : cards) {
-            addRankRepeat(card);
-            addSuitRepeat(card);
-        }
-    }
-
-    private Combination evaluateCombination() {
-        List<Card> cards = new ArrayList<>(this.cards);
-        Collections.sort(cards);
-
-        final int lastIndex = HAND_SIZE - 1;
-        Card lastCard = cards.get(lastIndex);
-        Card firstCard = cards.get(0);
-
-        if (suitRepeats.values().size() == 1) {
-            if (rankRepeats.size() == HAND_SIZE) {
-                if (lastCard.getLevel() - firstCard.getLevel() == lastIndex) {
-                    if (lastCard.getRank() == ACE)
-                        return new Combination(ROYAL_FLUSH, List.of(lastCard));
-
-                    return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
-                }
-
-                if (lastCard.getRank() == ACE
-                        && cards.get(lastIndex - 1).getLevel() - cards.get(0).getLevel() == lastIndex - 1)
-                    return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
-            }
-
-            return new Combination(FLUSH, cards);
-        }
-
-        if (rankRepeats.size() == HAND_SIZE &&
-                (lastCard.getLevel() - firstCard.getLevel() == lastIndex
-                        || (lastCard.getRank() == ACE
-                        && cards.get(lastIndex - 1).getLevel() - cards.get(0).getLevel() == lastIndex - 1)))
-            return new Combination(STRAIGHT, List.of(lastCard));
-
-        List<Card> currentKickers = null;
-        ComboType combination = KICKER;
-        for (int i = 0; i < rankRepeats.values().size(); i++) {
-            List<Card> repeatRankCards = new ArrayList<>(rankRepeats.values()).get(i);
-            if (repeatRankCards.size() == 4) {
-                Card kicker = this.cards.get(0).getRank() == repeatRankCards.get(0).getRank()
-                        ? this.cards.get(lastIndex)
-                        : this.cards.get(0);
-                return new Combination(CARE, List.of(kicker, repeatRankCards.get(0)));
-            }
-
-            if (repeatRankCards.size() == 3) {
-                if (combination == PAIR)
-                    return new Combination(FULL_HOUSE, List.of(currentKickers.get(0), repeatRankCards.get(0)));
-
-                combination = SET;
-                currentKickers = repeatRankCards;
-                continue;
-            }
-
-            if (repeatRankCards.size() == 2) {
-                if (combination == PAIR) {
-                    List<Card> kickers = getSingleKickers();
-                    kickers.add(currentKickers.get(0));
-                    kickers.add(repeatRankCards.get(0));
-                    return new Combination(TWO_PAIR, kickers);
-                }
-
-                if (combination == SET)
-                    return new Combination(FULL_HOUSE, List.of(currentKickers.get(0), repeatRankCards.get(0)));
-
-                combination = PAIR;
-                currentKickers = repeatRankCards;
-            }
-        }
-
-        if (combination == PAIR || combination == SET) {
-            List<Card> kickers = getSingleKickers();
-            kickers.add(currentKickers.get(0));
-            return new Combination(combination, kickers);
-        }
-
-        return new Combination(combination, cards);
-    }
-
-    private List<Card> getSingleKickers() {
-        return rankRepeats.values()
-                .stream()
-                .filter(cardsRank -> cardsRank.size() == 1)
-                .map(lists -> lists.get(0))
-                .collect(Collectors.toList());
-    }
-
-    public Card addCard(String card) throws ParseException {
-        Card parsedCard = new Card(card);
-        addCard(parsedCard);
-        return parsedCard;
-    }
-
-    public void addCard(Card card) {
-        cards.add(card);
     }
 
     public List<Card> getCards() {
@@ -156,31 +50,16 @@ public class PokerHand implements Comparable<PokerHand> {
         return combination;
     }
 
-    private void addSuitRepeat(Card card) {
-        Suit suit = card.getSuit();
-        if (suitRepeats.containsKey(suit))
-            suitRepeats.get(suit).add(card);
-
-        List<Card> cards = new ArrayList<>();
-        cards.add(card);
-        suitRepeats.put(suit, cards);
+    private void addCard(String card) throws ParseException {
+        Card parsedCard = new Card(card);
+        addCard(parsedCard);
     }
 
-    private void addRankRepeat(Card card) {
-        Rank rank = card.getRank();
-        if (rankRepeats.containsKey(rank)) {
-            rankRepeats.get(rank).add(card);
-            return;
-        }
-
-        List<Card> cards = new ArrayList<>();
-        cards.add(card);
-        rankRepeats.put(rank, cards);
-    }
-
-    private void validate() throws ParseException {
-        if (cards.size() != HAND_SIZE)
+    private void addCard(Card card) throws ParseException {
+        if (cards.size() >= HAND_SIZE)
             throw new ParseException("Hand size must be " + HAND_SIZE);
+
+        cards.add(card);
     }
 
     @Override

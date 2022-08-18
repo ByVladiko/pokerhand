@@ -1,7 +1,10 @@
 package com.vldby.pockerhand.model;
 
 import com.vldby.pockerhand.exception.ParseException;
+import com.vldby.pockerhand.model.util.PokerHandGenerator;
 import org.junit.jupiter.api.Test;
+
+import java.util.stream.IntStream;
 
 import static com.vldby.pockerhand.enums.ComboType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,27 +49,33 @@ class PokerHandTest {
         ParseException exception;
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("44 JH QH 7D 8H"));
+        assertEquals("Invalid syntax on position: 1", exception.getMessage());
         assertEquals(1, exception.getErrorOffset());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("4 JH H 7D 8H"));
+        assertEquals("Invalid syntax on position: 0", exception.getMessage());
         assertEquals("Invalid number of characters in input string", exception.getCause().getMessage());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand(""));
+        assertEquals("Invalid syntax on position: -1", exception.getMessage());
         assertEquals("Empty value", exception.getCause().getMessage());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("TSJC QD TH AH"));
+        assertEquals("Invalid syntax on position: 0", exception.getMessage());
         assertEquals("Invalid number of characters in input string", exception.getCause().getMessage());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("TS JC DQ TH AH"));
+        assertEquals("Invalid syntax on position: 6", exception.getMessage());
         assertEquals("Invalid rank", exception.getCause().getMessage());
         assertEquals(6, exception.getErrorOffset());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("TE JC DQ TH AH"));
+        assertEquals("Invalid syntax on position: 1", exception.getMessage());
         assertEquals("Invalid suit", exception.getCause().getMessage());
         assertEquals(1, exception.getErrorOffset());
 
         exception = assertThrows(ParseException.class, () -> new PokerHand("TS JC QD TH AH QS"));
-        assertEquals("Hand size must be " + PokerHand.HAND_SIZE, exception.getMessage());
+        assertEquals("Hand size must be " + PokerHand.HAND_SIZE, exception.getCause().getMessage());
     }
 
     @Test
@@ -80,6 +89,15 @@ class PokerHandTest {
         assertEquals(0, new PokerHand("AS KC TD 3H 3H").compareTo(new PokerHand("AD KH TD 3H 3H")));
         assertTrue(new PokerHand("2H TH JH KH TH").compareTo(new PokerHand("AC AD JH JD KH")) < 0);
         assertEquals(0, new PokerHand("KD KC TH TS AS").compareTo(new PokerHand("KD KC TH TS AC")));
+    }
+
+    @Test
+    public void pokerHandGeneratorTest() {
+        PokerHandGenerator pokerHandGenerator = new PokerHandGenerator();
+        IntStream.range(0, 100).forEach((i) -> assertDoesNotThrow(() -> {
+            PokerHand pokerHand = pokerHandGenerator.generateHand();
+            System.out.println(i + ": " + pokerHand + " " + pokerHand.getCombination().getComboType());
+        }));
     }
 
 }
