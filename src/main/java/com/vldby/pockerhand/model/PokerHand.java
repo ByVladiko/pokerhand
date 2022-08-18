@@ -63,26 +63,26 @@ public class PokerHand implements Comparable<PokerHand> {
         Card firstCard = cards.get(0);
 
         if (suitRepeats.values().size() == 1) {
-            if (rankRepeats.size() == HAND_SIZE &&
-                    lastCard.getRank().getLevel() - firstCard.getRank().getLevel() == lastIndex) {
-                if (lastCard.getRank() == ACE)
-                    return new Combination(ROYAL_FLUSH, List.of(lastCard));
+            if (rankRepeats.size() == HAND_SIZE) {
+                if (lastCard.getLevel() - firstCard.getLevel() == lastIndex) {
+                    if (lastCard.getRank() == ACE)
+                        return new Combination(ROYAL_FLUSH, List.of(lastCard));
 
-                return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
+                    return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
+                }
+
+                if (lastCard.getRank() == ACE
+                        && cards.get(lastIndex - 1).getLevel() - cards.get(0).getLevel() == lastIndex - 1)
+                    return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
             }
-
-            if (rankRepeats.size() == HAND_SIZE && lastCard.getRank() == ACE
-                    && cards.get(lastIndex - 1).getRank().getLevel() - cards.get(0).getRank().getLevel() == lastIndex - 1)
-                return new Combination(STRAIGHT_FLUSH, List.of(lastCard));
-
 
             return new Combination(FLUSH, cards);
         }
 
         if (rankRepeats.size() == HAND_SIZE &&
-                (lastCard.getRank().getLevel() - firstCard.getRank().getLevel() == lastIndex
-                || (lastCard.getRank() == ACE
-                && cards.get(lastIndex - 1).getRank().getLevel() - cards.get(0).getRank().getLevel() == lastIndex - 1)))
+                (lastCard.getLevel() - firstCard.getLevel() == lastIndex
+                        || (lastCard.getRank() == ACE
+                        && cards.get(lastIndex - 1).getLevel() - cards.get(0).getLevel() == lastIndex - 1)))
             return new Combination(STRAIGHT, List.of(lastCard));
 
         List<Card> currentKickers = null;
@@ -161,7 +161,7 @@ public class PokerHand implements Comparable<PokerHand> {
         if (suitRepeats.containsKey(suit))
             suitRepeats.get(suit).add(card);
 
-        ArrayList<Card> cards = new ArrayList();
+        List<Card> cards = new ArrayList<>();
         cards.add(card);
         suitRepeats.put(suit, cards);
     }
@@ -173,7 +173,7 @@ public class PokerHand implements Comparable<PokerHand> {
             return;
         }
 
-        ArrayList<Card> cards = new ArrayList();
+        List<Card> cards = new ArrayList<>();
         cards.add(card);
         rankRepeats.put(rank, cards);
     }

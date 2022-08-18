@@ -12,18 +12,24 @@ import java.util.Random;
 
 public class PokerHandGenerator {
 
-    public PokerHand generateHand() throws ParseException {
-        Random random = new Random();
-        Rank[] ranks = Rank.values();
-        Suit[] suits = Suit.values();
+    private final Random random = new Random();
+    private final Rank[] ranks = Rank.values();
+    private final Suit[] suits = Suit.values();
+
+    public PokerHand generateHand() {
         List<Card> cards = new ArrayList<>();
         for (int i = 0; i < PokerHand.HAND_SIZE; i++) {
-            Rank rank = ranks[random.nextInt(ranks.length - 1)];
-            Suit suit = suits[random.nextInt(suits.length - 1)];
+            Rank rank = ranks[random.nextInt(ranks.length)];
+            Suit suit = suits[random.nextInt(suits.length)];
             cards.add(new Card(rank, suit));
         }
 
-        return new PokerHand(cards);
+        PokerHand pokerHand = null;
+        try {
+            pokerHand = new PokerHand(cards);
+        } catch (ParseException ignore) {}
+
+        return pokerHand;
     }
 
 }

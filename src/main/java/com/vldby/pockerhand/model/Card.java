@@ -40,6 +40,10 @@ public class Card implements Comparable<Card> {
         return suit;
     }
 
+    public int getLevel() {
+        return rank.getLevel();
+    }
+
     @Override
     public String toString() {
         return rank.getSymbol() + suit.getSymbol();

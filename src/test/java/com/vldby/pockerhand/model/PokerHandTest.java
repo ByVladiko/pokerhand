@@ -72,7 +72,7 @@ class PokerHandTest {
     @Test
     public void comparisonTest() throws ParseException {
         assertTrue(new PokerHand("2S 3S 8S 9S JS").compareTo(new PokerHand("2S 3S 7S TS JS")) > 0);
-        assertTrue(new PokerHand("AS KC KS QC QS").compareTo(new PokerHand("AS KC KH JD JH")) > 0);
+        assertTrue(new PokerHand("AS KC KS QC QS").compareTo(new PokerHand("AS KC KH JD JH")) < 0);
         assertTrue(new PokerHand("8S 8C 9D 9C KD").compareTo(new PokerHand("8S 8C 9D TH 9C")) < 0);
         assertTrue(new PokerHand("8S 9H TS JD QC").compareTo(new PokerHand("8H 9S TH JS JD")) < 0);
         assertTrue(new PokerHand("AS AH AC AD QC").compareTo(new PokerHand("AS AH AC AD KC")) > 0);
